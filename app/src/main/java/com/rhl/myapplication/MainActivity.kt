@@ -35,13 +35,7 @@ class MainActivity : AppCompatActivity() {
         //Try changing between CustomLayoutManager1, CustomLayoutManager2 etc. to see the differences
         recyclerView.layoutManager =CircularRecyclerLayoutManager(
             canScrollHorizontally = true,
-            canScrollVertically = false,
-            itemsPerCircle = 2,
-            anglePerItem = 45.0,
-            firstCircleRadius = 200.0,
-            angleStepForCircles = 45.0,
-            isClockwise = false,
-            initialAngle = 45.0
+            canScrollVertically = false
         )
         recyclerView.adapter = ThingAdapter(thingsList)
 

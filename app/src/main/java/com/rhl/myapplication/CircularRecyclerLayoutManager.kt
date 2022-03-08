@@ -8,15 +8,8 @@ import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 
 class CircularRecyclerLayoutManager(
-    private val itemsPerCircle: Int = 1,
-    private var anglePerItem: Double = Double.NaN,
-    private var firstCircleRadius: Double = Double.NaN,
-    private var angleStepForCircles: Double = Double.NaN,
     private val canScrollHorizontally: Boolean = true,
-    private val canScrollVertically: Boolean = false,
-    private val initialAngle: Double = 0.0,
-    private val isClockwise: Boolean = false
-
+    private val canScrollVertically: Boolean = false
 ) : RecyclerView.LayoutManager() {
     private var lastViewInVisibleRadius: Double = 0.0
     private val spiralRatio: Double = 0.65
@@ -242,21 +235,6 @@ class CircularRecyclerLayoutManager(
         return true
     }
 
-    private fun calculateConstants() {
-        Log.e("TAG", "calculateConstants: ")
-
-        centerPoint = PointF(width / 2f, height / 2f)
-//        if (firstCircleRadius.isNaN()) {
-//            firstCircleRadius = width / 4.0
-//        }
-//
-//        val firstCircleLength = 2 * Math.PI * firstCircleRadius
-//        itemWidth = ((firstCircleLength / (itemsPerCircle)) * 0.4).toInt()
-//        if (anglePerItem.isNaN()) {
-//            anglePerItem =
-//                360 / if (itemCount > itemsPerCircle) itemsPerCircle.toDouble() else itemCount.toDouble()
-//        }
-    }
 
     override fun scrollHorizontallyBy(
         dx: Int,
