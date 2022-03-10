@@ -113,7 +113,7 @@ class CircularRecyclerLayoutManager(
         for (position in 0 until itemCount) {
             if (updatedPositions.contains(position)) continue
             val data = viewCalculation[position]
-            val positionData = calculatePosition(data.currentRadius?:0.0, data.angle?:0.0)
+            val positionData = calculatePosition(data.currentRadius ?: 0.0, data.angle ?: 0.0)
 
             layoutItemIfNeeded(positionData, data, recycler, position)
         }
@@ -135,13 +135,15 @@ class CircularRecyclerLayoutManager(
 
 
             lastViewInVisibleRadius =
-                if (isViewVisible(positionData).not() &&lastViewInVisibleRadius>(bottomData?.currentRadius?:0.0)) (data?.currentRadius?:0.0) else lastViewInVisibleRadius
+                if (isViewVisible(positionData).not() && lastViewInVisibleRadius > (bottomData?.currentRadius
+                        ?: 0.0)
+                ) (data?.currentRadius ?: 0.0) else lastViewInVisibleRadius
             Log.e(
                 "TAG",
                 "layoutItemIfNeeded: position $position isViewVisible ${isViewVisible(positionData)}  " +
-                        "currentRadius ${data?.currentRadius?:0.0} scaleRatio $scaleRatio  bottomView?.rect?.top ${bottomData?.currentRadius?:0.0} lastViewInVisibleRadius $lastViewInVisibleRadius "
+                        "currentRadius ${data?.currentRadius ?: 0.0} scaleRatio $scaleRatio  bottomView?.rect?.top ${bottomData?.currentRadius ?: 0.0} lastViewInVisibleRadius $lastViewInVisibleRadius "
             )
-            if (isViewVisible(positionData) &&data?.currentRadius?:0.0 > lastViewInVisibleRadius&&data?.currentRadius?:0.0 <0.0) {
+            if (isViewVisible(positionData) && data?.currentRadius ?: 0.0 > lastViewInVisibleRadius && data?.currentRadius ?: 0.0 < 0.0) {
                 addView(viewForPosition)
                 val rect = Rect()
                 viewForPosition.getGlobalVisibleRect(rect)
@@ -174,21 +176,35 @@ class CircularRecyclerLayoutManager(
     ) {
         Log.e("TAG", "updateAllChild: childCount $childCount")
 //        scaleRatio = 0f
+        val bottomData = viewCalculation[arrayOfRect.indexOf(bottomView)]
+
         for (position in 0 until childCount) {
             getChildAt(position)?.let { childAt ->
                 val childPosition = getPosition(childAt)
                 val data = viewCalculation[childPosition]
 
-                val positionData = calculatePosition(data.currentRadius?:0.0, data.angle?:0.0)
+                val positionData = calculatePosition(data.currentRadius ?: 0.0, data.angle ?: 0.0)
                 val rect = Rect()
                 childAt.getGlobalVisibleRect(rect)
                 if (bottomView?.rect == rect) {
                     if ((scaleRatio < 1)) {
                         scaleRatio = 1f
                     }
-                    childAt.scaleX = scaleRatio
-                    childAt.scaleY = scaleRatio
-                    scaleRatio += 0.1f
+                Log.e(
+                    "TAG",
+                    "updateAllChild: childAt.scaleX ${
+                        (data.currentRadius ?: 0.0).div(bottomData.currentRadius ?: 0.0).toFloat()
+                    }"
+                )
+//                val scale =
+//                    bottomData.currentRadius?.let { data.currentRadius?.div(it) }?.toFloat() ?: 0f
+//                if (scale>= -3.4028235E38) {
+//                    childAt.scaleX = scale
+//                    childAt.scaleY = scale
+//                }
+                childAt.scaleX = childCount.div(10)+position.div(10f)
+                childAt.scaleY =childCount.div(10)+ position.div(10f)
+                scaleRatio += 0.1f
                 } else {
                     childAt.scaleX = scaleRatio
                     childAt.scaleY = scaleRatio
@@ -214,8 +230,9 @@ class CircularRecyclerLayoutManager(
             }
             val data = viewCalculation.get(position)
             data?.currentRadius = data.currentRadius?.plus(dy * 0.2)
-            if (data.currentRadius?:0.0 < 0) data.currentRadius = 0.0
-            if (data.currentRadius?:0.0 > data.initialRadius?:0.0) data.currentRadius = data.initialRadius
+            if (data.currentRadius ?: 0.0 < 0) data.currentRadius = 0.0
+            if (data.currentRadius ?: 0.0 > data.initialRadius ?: 0.0) data.currentRadius =
+                data.initialRadius
         }
     }
 
@@ -305,7 +322,12 @@ class CircularRecyclerLayoutManager(
         return travel
     }
 
-    inner class ItemData(val initialRadius: Double?=0.0, var currentRadius: Double?=0.0, var angle: Double?=0.0)
+    inner class ItemData(
+        val initialRadius: Double? = 0.0,
+        var currentRadius: Double? = 0.0,
+        var angle: Double? = 0.0
+    )
+
     inner class PositionData(val left: Int, val top: Int, val right: Int, val bottom: Int)
 
     private fun calculateScaleData() {
