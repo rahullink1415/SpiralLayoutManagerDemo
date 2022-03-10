@@ -11,7 +11,7 @@ class CircularRecyclerLayoutManager(
     private val canScrollHorizontally: Boolean = true,
     private val canScrollVertically: Boolean = false
 ) : RecyclerView.LayoutManager() {
-    private var lastViewInVisibleRadius: Double = 0.0
+//    private var lastViewInVisibleRadius: Double = 0.0
     private val spiralRatio: Double = 0.65
     private var horizontalScrollOffset = 0
     private var verticalScrollOffset = 0
@@ -120,10 +120,6 @@ class CircularRecyclerLayoutManager(
             if (updatedPositions.contains(position)) continue
             val data = viewCalculation[position]
             val positionData = calculatePosition(data.currentRadius ?: 0.0, data.angle ?: 0.0)
-            lastViewInVisibleRadius =
-                if (isViewVisible(positionData).not() && lastViewInVisibleRadius > (bottomData?.currentRadius
-                        ?: 0.0)
-                ) (data?.currentRadius ?: 0.0) else lastViewInVisibleRadius
             layoutItemIfNeeded(positionData, data, recycler, position)
         }
 
@@ -147,15 +143,10 @@ class CircularRecyclerLayoutManager(
             Log.e(
                 "TAG",
                 "layoutItemIfNeeded: position $position isViewVisible ${isViewVisible(positionData)}  " +
-                        "currentRadius ${data?.currentRadius ?: 0.0}   bottomView?.rect?.top ${bottomData?.currentRadius ?: 0.0} lastViewInVisibleRadius $lastViewInVisibleRadius "
+                        "currentRadius ${data?.currentRadius ?: 0.0}   bottomView?.rect?.top ${bottomData?.currentRadius ?: 0.0}  "
             )
             if (isViewVisible(positionData) && calculatedRatio <2.0) {
                 addView(viewForPosition)
-                val rect = Rect()
-                viewForPosition.getGlobalVisibleRect(rect)
-                val calculatedRatio =
-                    (data?.currentRadius ?: 0.0).div(spiralRatio).div(-45).toInt().div(10f)
-                
                 viewForPosition.scaleX = calculatedRatio
                 viewForPosition.scaleY = calculatedRatio
 
@@ -185,12 +176,9 @@ class CircularRecyclerLayoutManager(
                     childAt.scaleX = calculatedRatio
                     childAt.scaleY = calculatedRatio
 
-                    childAt.scaleX = calculatedRatio
-                    childAt.scaleY = calculatedRatio
-
                 Log.e(
                     "TAG",
-                    "updateAllChild: childAt.scaleX  calculatedRatio $calculatedRatio  pos $position  lastRadius $lastViewInVisibleRadius"
+                    "updateAllChild: childAt.scaleX  calculatedRatio $calculatedRatio  pos $position  "
                 )
                 if (isViewVisible(positionData).not() || data.currentRadius == 0.0||calculatedRatio>2.0) {
                     viewsForDetaching.add(childAt)
@@ -203,34 +191,16 @@ class CircularRecyclerLayoutManager(
         }
     }
 
-    private fun updateCalculation(dy: Int) {
-        Log.e("TAG", "updateCalculation: ")
-
-        for (position in 0 until viewCalculation.size()) {
-            if (shouldItemMove(position).not()) {
-                continue
-            }
-            val data = viewCalculation.get(position)
-            data?.currentRadius = data.currentRadius?.plus(dy * 0.2)
-            if (data.currentRadius ?: 0.0 < 0) data.currentRadius = 0.0
-            if (data.currentRadius ?: 0.0 > data.initialRadius ?: 0.0) data.currentRadius =
-                data.initialRadius
-        }
-    }
 
     private fun shouldItemMove(index: Int): Boolean {
-        Log.e("TAG", "shouldItemMove: ")
-
         val itemCurrentRadius = viewCalculation.get(index)?.currentRadius ?: 0.0
-        for (position in 0 until itemCount) {
-            val currentRadius = viewCalculation.get(position)?.currentRadius ?: 0.0
-            val isRadiusBigEnough = currentRadius <= 0.0
-            if (isRadiusBigEnough && itemCurrentRadius == 0.0) {
+        val calculatedRatio =
+            (itemCurrentRadius).div(spiralRatio).div(-45).toInt().div(10f)
+        Log.e("TAG", "shouldItemMove: $itemCurrentRadius calculatedRatio $calculatedRatio index $index")
+
+        if (childCount<=2 && calculatedRatio in 1.7..2.0) {
                 return false
             }
-        }
-        Log.e("TAG", "shouldItemMove: $itemCurrentRadius")
-
         return true
     }
 
@@ -282,10 +252,8 @@ class CircularRecyclerLayoutManager(
             travel = (totalDistance - verticalScrollOffset).toInt()
         }
 
-        //将水平方向的偏移量+travel
         verticalScrollOffset += travel
 
-        // 平移容器内的item
         offsetChildrenVertical(-travel)
         for (position in 0 until viewCalculation.size()) {
             if (shouldItemMove(position).not()) {
@@ -297,9 +265,7 @@ class CircularRecyclerLayoutManager(
             viewCalculation.get(position).currentRadius = radius
         }
         calculateScaleData()
-        updateCalculation(travel)
         updateViews(recycler)
-//        scaleItems()
         return travel
     }
 
