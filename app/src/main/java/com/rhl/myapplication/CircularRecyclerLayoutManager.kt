@@ -47,7 +47,7 @@ class CircularRecyclerLayoutManager(
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler?, state: RecyclerView.State?) {
         Log.e("TAG", "onLayoutChildren: ")
-        centerPoint = PointF(width / 2f, height / 2f)
+        centerPoint = PointF(width / 1.85f, height / 2f)
         for (position in 0 until itemCount) {
             fillAndLayoutItem(position, recycler)
         }
