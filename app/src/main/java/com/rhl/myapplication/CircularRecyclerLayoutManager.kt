@@ -11,7 +11,9 @@ class CircularRecyclerLayoutManager(
     private val canScrollHorizontally: Boolean = true,
     private val canScrollVertically: Boolean = false
 ) : RecyclerView.LayoutManager() {
-//    private var lastViewInVisibleRadius: Double = 0.0
+    private var isScrollBackward: Boolean =false
+
+    //    private var lastViewInVisibleRadius: Double = 0.0
     private val spiralRatio: Double = 0.65
     private var horizontalScrollOffset = 0
     private var verticalScrollOffset = 0
@@ -196,11 +198,12 @@ class CircularRecyclerLayoutManager(
         val itemCurrentRadius = viewCalculation.get(index)?.currentRadius ?: 0.0
         val calculatedRatio =
             (itemCurrentRadius).div(spiralRatio).div(-45).toInt().div(10f)
-        Log.e("TAG", "shouldItemMove: $itemCurrentRadius calculatedRatio $calculatedRatio index $index")
+        Log.e("TAG", "shouldItemMove: $itemCurrentRadius calculatedRatio $calculatedRatio index $index isScrollBackward $isScrollBackward")
 
-        if (childCount<=2 && calculatedRatio in 1.7..2.0) {
-                return false
-            }
+//        if (childCount in 1..2 && calculatedRatio >1.7 &&isScrollBackward.not()) {
+//            horizontalScrollOffset =0
+//                return false
+//            }
         return true
     }
 
@@ -210,30 +213,35 @@ class CircularRecyclerLayoutManager(
         recycler: RecyclerView.Recycler?,
         state: RecyclerView.State?
     ): Int {
-        Log.e("TAG", "scrollHorizontallyBy: $dx")
+//        Log.e("TAG", "scrollHorizontallyBy: $dx")
         var travel = dx
+        isScrollBackward = dx >= 0
         Log.e("TAG", "scrollHorizontallyBy: $dx $horizontalScrollOffset")
-        if (horizontalScrollOffset + dx > 0) {
-            travel = -horizontalScrollOffset
-        } else if (horizontalScrollOffset + dx > totalDistance) {
-            travel = (totalDistance - horizontalScrollOffset).toInt()
-        }
-
-        horizontalScrollOffset += travel
-        Log.e("TAG", "scrollHorizontallyBy: $dx $horizontalScrollOffset")
-
-        offsetChildrenHorizontal(-travel)
-        for (position in 0 until viewCalculation.size()) {
-            if (shouldItemMove(position).not()) {
-                continue
+        if (childCount>2 || isScrollBackward) {
+            if (horizontalScrollOffset + dx > 0) {
+                travel = -horizontalScrollOffset
+            } else if (horizontalScrollOffset + dx > totalDistance) {
+                travel = (totalDistance - horizontalScrollOffset).toInt()
             }
-            val angle = -45.0 * position + horizontalScrollOffset * 0.1
-            val radius: Double = spiralRatio.times(angle)
-            viewCalculation[position].angle = angle
-            viewCalculation.get(position).currentRadius = radius
+
+            horizontalScrollOffset += travel
+            Log.e("TAG", "scrollHorizontallyBy: $dx $horizontalScrollOffset")
+            for (position in 0 until viewCalculation.size()) {
+                if (shouldItemMove(position).not()) {
+                    continue
+                }
+                val angle = -45.0 * position + horizontalScrollOffset * 0.1
+                val radius: Double = spiralRatio.times(angle)
+                viewCalculation[position].angle = angle
+                viewCalculation.get(position).currentRadius = radius
+            }
+            calculateScaleData()
+            updateViews(recycler)
+        }else{
+            travel =0
         }
-        calculateScaleData()
-        updateViews(recycler)
+//        offsetChildrenHorizontal(-travel)
+
         return travel
     }
 
