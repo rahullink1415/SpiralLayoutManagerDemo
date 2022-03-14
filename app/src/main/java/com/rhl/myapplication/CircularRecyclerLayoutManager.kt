@@ -135,9 +135,6 @@ class CircularRecyclerLayoutManager(
         recycler: RecyclerView.Recycler?,
         position: Int
     ) {
-//        Log.e("TAG", "layoutItemIfNeeded: ")
-        val bottomData = viewCalculation[arrayOfRect.indexOf(bottomView)]
-
         recycler?.getViewForPosition(position)?.let { viewForPosition ->
 
             val calculatedRatio =
@@ -145,9 +142,9 @@ class CircularRecyclerLayoutManager(
             Log.e(
                 "TAG",
                 "layoutItemIfNeeded: position $position isViewVisible ${isViewVisible(positionData)}  " +
-                        "currentRadius ${data?.currentRadius ?: 0.0}   bottomView?.rect?.top ${bottomData?.currentRadius ?: 0.0}  "
+                        "currentRadius ${data?.currentRadius ?: 0.0}   "
             )
-            if (isViewVisible(positionData) && calculatedRatio <2.0) {
+            if (isViewVisible(positionData) && calculatedRatio>0.0 && calculatedRatio <2.0) {
                 addView(viewForPosition)
                 viewForPosition.scaleX = calculatedRatio
                 viewForPosition.scaleY = calculatedRatio
@@ -218,20 +215,23 @@ class CircularRecyclerLayoutManager(
         isScrollBackward = dx >= 0
         Log.e("TAG", "scrollHorizontallyBy: $dx $horizontalScrollOffset")
         if (childCount>2 || isScrollBackward) {
-            if (horizontalScrollOffset + dx > 0) {
-                travel = -horizontalScrollOffset
-            } else if (horizontalScrollOffset + dx > totalDistance) {
-                travel = (totalDistance - horizontalScrollOffset).toInt()
-            }
+//            if (horizontalScrollOffset + dx > 0) {
+//                travel = -horizontalScrollOffset
+//            } else if (horizontalScrollOffset + dx > totalDistance) {
+//                travel = (totalDistance - horizontalScrollOffset).toInt()
+//            }
 
             horizontalScrollOffset += travel
-            Log.e("TAG", "scrollHorizontallyBy: $dx $horizontalScrollOffset")
+//            Log.e("TAG", "scrollHorizontallyBy: $dx $horizontalScrollOffset")
             for (position in 0 until viewCalculation.size()) {
-                if (shouldItemMove(position).not()) {
-                    continue
-                }
-                val angle = -45.0 * position + horizontalScrollOffset * 0.1
+//                if (shouldItemMove(position).not()) {
+//                    continue
+//                }
+                var angle = -45.0 * position + horizontalScrollOffset * 0.1
+                angle = if (angle<0)angle else 0.0
                 val radius: Double = spiralRatio.times(angle)
+                Log.e("TAG", "scrollHorizontallyBy:position $position angle $angle radius$radius horizontalScrollOffset $horizontalScrollOffset")
+
                 viewCalculation[position].angle = angle
                 viewCalculation.get(position).currentRadius = radius
             }
