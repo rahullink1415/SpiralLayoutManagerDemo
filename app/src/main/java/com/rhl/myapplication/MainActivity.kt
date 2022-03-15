@@ -16,7 +16,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val thingsList : List<String> = listOf("1", "2", "3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22")
+        val thingsList : List<String> = listOf("1","2", "3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26")
 
         val recyclerView: RecyclerView = findViewById(R.id.recyclerview)
 
@@ -30,14 +30,15 @@ class MainActivity : AppCompatActivity() {
 
         //This is how you would usually set up a LinearLayoutManager
 //        recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-
         //This is using our CustomLayoutManager.
         //Try changing between CustomLayoutManager1, CustomLayoutManager2 etc. to see the differences
-        recyclerView.layoutManager =CircularRecyclerLayoutManager(
+        recyclerView.layoutManager =CircularRecyclerLayoutManager(this,
             canScrollHorizontally = true,
             canScrollVertically = false
         )
         recyclerView.adapter = ThingAdapter(thingsList)
+//        recyclerView.smoothScrollToPosition(18)
+
 
     }
 }
