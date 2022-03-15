@@ -17,6 +17,7 @@ class CircularRecyclerLayoutManager(
     private var lastPositionData: PositionData? = null
     private var lastVisiblePos: Int = 0
     private var isScrollBackward: Boolean = false
+    private var stopBackScroll: Boolean = true
 
     //    private var lastViewInVisibleRadius: Double = 0.0
     private val spiralRatio: Double = 0.65
@@ -65,17 +66,7 @@ class CircularRecyclerLayoutManager(
         for (position in 0 until itemCount) {
             fillAndLayoutItem(position, recycler)
         }
-//        val angle = (-45.0).times(lastVisiblePos-1)
-//        val circleRadius =
-//            spiralRatio.times(angle)
-//        val remainItems = itemCount.minus(childCount)
-////        if (remainItems == 0) {
-//            val scroll = circleRadius.times(lastVisiblePos - itemCount-1).toInt()//.times(spiralRatio).toInt()
-//            Log.e("TAG", "onLayoutChildren : scroll $scroll remainItems $remainItems lastVisiblePos $lastVisiblePos")
-//            if (childCount < lastVisiblePos-2) {
-//                scrollHorizontallyBy(scroll, recycler, state)
-//            }
-//        }
+
     }
 
     private fun fillAndLayoutItem(position: Int, recycler: RecyclerView.Recycler?) {
@@ -84,7 +75,8 @@ class CircularRecyclerLayoutManager(
         val pos = lastVisiblePos - position
 
 //        val angle = -45.0 * if (pos >= 0) pos else 0
-        val angle = -45.0 *  pos
+        var angle = -45.0 * pos
+        angle = if (angle < 0) angle else 0.0
         Log.e("TAG", "fillAndLayoutItem: pos $pos angle $angle")
         val circleRadius =
             spiralRatio.times(angle)
@@ -154,7 +146,7 @@ class CircularRecyclerLayoutManager(
             if (updatedPositions.contains(position)) continue
             val data = viewCalculation[position]
             val positionData = calculatePosition(data.currentRadius ?: 0.0, data.angle ?: 0.0)
-            layoutItemIfNeeded(positionData, data, recycler, position,viewsForDetaching)
+            layoutItemIfNeeded(positionData, data, recycler, position, viewsForDetaching)
         }
 
         recycler?.let { viewsForDetaching.forEach { detachAndScrapView(it, recycler) } }
@@ -167,7 +159,7 @@ class CircularRecyclerLayoutManager(
         recycler: RecyclerView.Recycler?,
         position: Int,
         viewsForDetaching: MutableList<View>
-        ) {
+    ) {
         recycler?.getViewForPosition(position)?.let { viewForPosition ->
 
             val calculatedRatio =
@@ -245,25 +237,34 @@ class CircularRecyclerLayoutManager(
 //        Log.e("TAG", "scrollHorizontallyBy: $dx")
         var travel = dx
         isScrollBackward = dx >= 0
-        Log.e("TAG", "scrollHorizontallyBy: $dx $horizontalScrollOffset childCount $childCount itemCount $itemCount")
-        if ((childCount > 2 && isScrollBackward.not())||(childCount >= lastVisiblePos && isScrollBackward) ) {
+        val lastAngle = -45.0 * lastVisiblePos + 1
+        val lastRadius = spiralRatio.times(lastAngle)
+
+
+        Log.e(
+            "TAG",
+            "scrollHorizontallyBy: $dx $horizontalScrollOffset childCount $childCount itemCount $itemCount lastRadius $lastRadius stopBackScroll $stopBackScroll "
+        )
+        if ((childCount > 2 && isScrollBackward.not()) || (stopBackScroll.not() && isScrollBackward)) {
 
             horizontalScrollOffset += travel
             for (position in 0 until viewCalculation.size()) {
-                val pos = lastVisiblePos+1 - position
+                val pos = lastVisiblePos + 1 - position
                 val lastAngle = -45.0 * lastVisiblePos
 //                var angle = -45.0 * (if (pos >= 0) pos else 0) + horizontalScrollOffset * 0.1
-                var angle = -45.0 *  pos + horizontalScrollOffset * 0.1
+                var angle = -45.0 * pos + horizontalScrollOffset * 0.1
                 angle = if (angle < 0) angle else 0.0
                 val radius: Double = spiralRatio.times(angle)
                 Log.e(
                     "TAG",
-                    "scrollHorizontallyBy : position $position  pos $pos  angle $angle radius lastAngle $lastAngle $radius horizontalScrollOffset $horizontalScrollOffset"
+                    "scrollHorizontallyBy : position $position  pos $pos  angle $angle lastRadius $lastRadius radius $radius lastAngle $lastAngle  horizontalScrollOffset $horizontalScrollOffset"
                 )
 //                if (lastAngle.toInt()!=angle.toInt()) {
-                    viewCalculation[position].angle = angle
-                    viewCalculation.get(position).currentRadius = radius
+                viewCalculation[position].angle = angle
+                viewCalculation.get(position).currentRadius = radius
 //                }
+                if (position == 0)
+                    stopBackScroll =( radius <= lastRadius + 5 && radius >= lastRadius - 5)||radius>lastRadius+5
             }
             updateViews(recycler)
         } else {
