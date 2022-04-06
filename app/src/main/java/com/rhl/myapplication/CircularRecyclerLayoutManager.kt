@@ -1,8 +1,6 @@
 package com.rhl.myapplication
 
-import android.content.Context
 import android.graphics.PointF
-import android.util.Log
 import android.util.SparseArray
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
@@ -47,7 +45,6 @@ class CircularRecyclerLayoutManager(
     private val viewCalculation = SparseArray<ItemData>(itemCount)
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler?, state: RecyclerView.State?) {
-        Log.e("TAG", "onLayoutChildren: itemWidth $itemWidth")
         if (recycler != null) {
             detachAndScrapAttachedViews(recycler)
         };
@@ -131,7 +128,6 @@ class CircularRecyclerLayoutManager(
         val viewsForDetaching = mutableListOf<View>()
 
         updateAllChild(viewsForDetaching, updatedPositions)
-        Log.e("TAG", "updateViews: ")
 
         for (position in 0 until itemCount) {
             if (updatedPositions.contains(position)) continue
@@ -163,8 +159,6 @@ class CircularRecyclerLayoutManager(
                 measureChildWithMargins(viewForPosition, itemWidth, itemWidth)
                 layoutDecoratedWithMargins(viewForPosition, positionData)
 
-                Log.e("TAG", "layoutItemIfNeeded: $position ")
-
             } else {
                 detachView(viewForPosition)
             }
@@ -185,7 +179,6 @@ class CircularRecyclerLayoutManager(
                     (data.currentRadius ?: 0.0).div(spiralRatio).div(-45).toInt().div(10f)
                 childAt.scaleX = calculatedRatio
                 childAt.scaleY = calculatedRatio
-                Log.e("TAG", "  $calculatedRatio  pos $position  ")
                 if (isViewVisible(positionData).not() || data.currentRadius == 0.0 || calculatedRatio > 2.0) {
                     viewsForDetaching.add(childAt)
                 } else {
@@ -202,10 +195,6 @@ class CircularRecyclerLayoutManager(
         val itemCurrentRadius = viewCalculation.get(index)?.currentRadius ?: 0.0
         val calculatedRatio =
             (itemCurrentRadius).div(spiralRatio).div(-45).toInt().div(10f)
-        Log.e(
-            "TAG",
-            "shouldItemMove: $itemCurrentRadius calculatedRatio $calculatedRatio index $index isScrollBackward $isScrollBackward"
-        )
 
 //        if (childCount in 1..2 && calculatedRatio >1.7 &&isScrollBackward.not()) {
 //            horizontalScrollOffset =0
@@ -312,8 +301,6 @@ class CircularRecyclerLayoutManager(
         recycler: RecyclerView.Recycler?,
         state: RecyclerView.State?
     ): Int {
-        Log.e("TAG", "scrollVerticallyBy: $dy")
-
         val travel = dy
 
         verticalScrollOffset += travel
