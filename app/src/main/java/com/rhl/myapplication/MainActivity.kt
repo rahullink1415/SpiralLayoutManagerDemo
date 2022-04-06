@@ -1,7 +1,5 @@
 package com.rhl.myapplication
 
-import android.R.attr.x
-import android.R.attr.y
 import android.graphics.Point
 import android.os.Bundle
 import android.util.Log
@@ -10,15 +8,18 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import androidx.recyclerview.widget.SnapHelper
 import com.rhl.myapplication.databinding.ActivityMainBinding
 
 
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
     var mSecondLastPositionData: CircularRecyclerLayoutManager.PositionData? = null
+    var mSnapPositionData: CircularRecyclerLayoutManager.PositionData? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -70,10 +71,13 @@ class MainActivity : AppCompatActivity() {
             canScrollHorizontally = true,
             canScrollVertically = false,
             itemWidth = itemWidth
-        ) { _, secondLastPositionData,lastPos ->
-            Log.e("TAG", "onCreate: CircularRecyclerLayoutManager" + "  invoke")
+        ) { _, secondLastPositionData,lastPos,snapPosData ->
             secondLastPositionData?.let {
+                Log.e("TAG", "onScrolled: snapPosData  " +
+                        "${snapPosData?.top} ${snapPosData?.left}" +
+                        "top ${it.top} left ${it.left} ")
                 mSecondLastPositionData = it
+                mSnapPositionData = snapPosData
                 binding.root.post {
                     binding.centerMainView.x = it.left.toFloat().minus(itemWidth.div(3))
 
@@ -82,45 +86,30 @@ class MainActivity : AppCompatActivity() {
                 lastPos.let {
                     binding.name.text =thingsList[lastPos]
                 }
-                Log.e(
-                    "TAG",
-                    "onCreate: CircularRecyclerLayoutManager" + "  inside view " + it.bottom
-                )
             }
         }
-        binding.recyclerview.adapter = ThingAdapter(
-            thingsList
-        )
-
-
-//        recyclerView.smoothScrollToPosition(18)
-//        val itemWidth = (resources?.getDimension(R.dimen.item_width) ?: 200f).toInt()
+        binding.recyclerview.adapter = ThingAdapter(thingsList)
 
         binding.recyclerview.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
-                mSecondLastPositionData?.let {
-                    val itemView = binding.recyclerview.findChildViewUnder(
-                        it.top.toFloat().minus(itemWidth),
-                        it.left.toFloat().plus(itemWidth.div(2)).toFloat()
-                    )
-                    Log.e("TAG", "onScrolled: itemView $itemView " +
-                            "${it.top.toFloat().minus(itemWidth.div(3))} ${it.left.toFloat().plus(itemWidth.div(3))}" +
-                            "top ${it.top} left ${it.left} ")
-
-                    if (itemView != null) {
-                        val pos = binding.recyclerview.getChildLayoutPosition(itemView)
-                        Log.e("TAG", "onScrolled: pos $pos")
-
-                        binding.name.text =thingsList[pos]
-                    }
-                }
-
 
             }
 
-        })
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (newState == 0)
+                    mSecondLastPositionData?.let {lastPosData->
+                        mSnapPositionData?.let {snapData->
+                            val snapX = snapData.left-lastPosData.left
+                            val snapY = lastPosData.top-snapData.top
+                            recyclerView.scrollBy(snapX,snapY)
 
+                        }
+                    }
+            }
+
+        })
 
     }
 

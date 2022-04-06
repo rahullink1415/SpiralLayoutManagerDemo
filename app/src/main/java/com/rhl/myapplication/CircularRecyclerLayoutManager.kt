@@ -11,7 +11,7 @@ class CircularRecyclerLayoutManager(
     private val canScrollHorizontally: Boolean = true,
     private val canScrollVertically: Boolean = false,
     val itemWidth: Int = 0,
-    private val onLayoutDrawn: (center: PointF, secondLastPositionData: PositionData?, posLast: Int) -> Unit
+    private val onLayoutDrawn: (center: PointF, secondLastPositionData: PositionData?, posLast: Int, snapPosData: PositionData?) -> Unit
 ) : RecyclerView.LayoutManager() {
     var secondLastPositionData: PositionData? = null
 
@@ -74,7 +74,7 @@ class CircularRecyclerLayoutManager(
         for (position in 0 until itemCount) {
             fillAndLayoutItem(position, recycler)
         }
-        onLayoutDrawn.invoke(centerPoint, secondLastPositionData, 0)
+        onLayoutDrawn.invoke(centerPoint, secondLastPositionData, 0,null)
     }
 
     private fun fillAndLayoutItem(position: Int, recycler: RecyclerView.Recycler?) {
@@ -275,7 +275,8 @@ class CircularRecyclerLayoutManager(
                             (radius <= lastRadius + 5 && radius >= lastRadius - 5) || radius > lastRadius + 5
                     val secondLastRadius = spiralRatio.times(secondLastAngle)
                     if (lastAngle >= angle - 25 && lastAngle <= angle + 25) {
-                        onLayoutDrawn.invoke(centerPoint, secondLastPositionData, position)
+                        val positionData = calculatePosition(radius, angle)
+                        onLayoutDrawn.invoke(centerPoint, secondLastPositionData, position,positionData)
                     }
                     Log.e(
                         "TAG",
@@ -313,7 +314,8 @@ class CircularRecyclerLayoutManager(
                             (radius <= lastRadius + 5 && radius >= lastRadius - 5) || radius <= lastRadius
 //                        stopForwardScroll =( radius >= lastRadius + 5 && radius <= lastRadius - 5)||radius<=lastRadius
                     if (lastAngle >= angle - 25 && lastAngle <= angle + 25) {
-                        onLayoutDrawn.invoke(centerPoint, secondLastPositionData, position)
+                        val positionData = calculatePosition(radius, angle)
+                        onLayoutDrawn.invoke(centerPoint, secondLastPositionData, position,positionData)
                     }
                     Log.e(
                         "TAG",
