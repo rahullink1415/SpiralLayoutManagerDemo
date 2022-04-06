@@ -8,11 +8,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import androidx.recyclerview.widget.SnapHelper
 import com.rhl.myapplication.databinding.ActivityMainBinding
 
 
@@ -103,7 +101,8 @@ class MainActivity : AppCompatActivity() {
                         mSnapPositionData?.let {snapData->
                             val snapX = snapData.left-lastPosData.left
                             val snapY = lastPosData.top-snapData.top
-                            recyclerView.scrollBy(snapX,snapY)
+                            recyclerView.smoothScrollBy(snapX,snapY)
+//                            recyclerView.scrollBy(snapX,snapY)
 
                         }
                     }
