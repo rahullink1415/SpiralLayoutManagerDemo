@@ -1,6 +1,7 @@
 package com.rhl.myapplication
 
 import android.graphics.PointF
+import android.util.Log
 import android.util.SparseArray
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
@@ -55,8 +56,8 @@ class CircularRecyclerLayoutManager(
             val circleRadius =
                 spiralRatio.times(angle)
             val data = calculatePosition(circleRadius, angle)
-            val calculatedRatio =
-                circleRadius.div(spiralRatio).div(-45).toInt().div(10f)
+            val calculatedRatio = calculateRatioFun(circleRadius)
+
             if (isViewVisible(data) && calculatedRatio < 2.0) {
                 secondLastVisiblePos = pos - 1
                 val angle2 = -45.0 * secondLastVisiblePos
@@ -68,7 +69,7 @@ class CircularRecyclerLayoutManager(
         for (position in 0 until itemCount) {
             fillAndLayoutItem(position, recycler)
         }
-        onLayoutDrawn.invoke(centerPoint, secondLastPositionData, 0,null)
+        onLayoutDrawn.invoke(centerPoint, secondLastPositionData, 0, null)
     }
 
     private fun fillAndLayoutItem(position: Int, recycler: RecyclerView.Recycler?) {
@@ -80,8 +81,8 @@ class CircularRecyclerLayoutManager(
         val positionData = calculatePosition(circleRadius, angle)
 
         viewCalculation.put(position, ItemData(circleRadius, circleRadius, angle))
-        val calculatedRatio =
-            circleRadius.div(spiralRatio).div(-45).toInt().div(10f)
+
+        val calculatedRatio = calculateRatioFun(circleRadius)
         if (isViewVisible(positionData) && calculatedRatio < 2.0) {
             recycler?.getViewForPosition(position)?.let { viewForPosition ->
 
@@ -97,6 +98,11 @@ class CircularRecyclerLayoutManager(
 
     }
 
+    private fun calculateRatioFun(circleRadius: Double): Float {
+        val scale = circleRadius.div(spiralRatio).div(-45).div(10f)
+
+        return (Math.round(scale * 100.0) / 100.0).toFloat()
+    }
 
     private fun calculatePosition(radius: Double, angle: Double): PositionData {
         val xCoordinate = (radius * cosAngle(angle)) + centerPoint.x
@@ -140,6 +146,7 @@ class CircularRecyclerLayoutManager(
         viewsForDetaching.clear()
     }
 
+
     private fun layoutItemIfNeeded(
         positionData: PositionData,
         data: ItemData?,
@@ -149,12 +156,12 @@ class CircularRecyclerLayoutManager(
     ) {
         recycler?.getViewForPosition(position)?.let { viewForPosition ->
 
-            val calculatedRatio =
-                (data?.currentRadius ?: 0.0).div(spiralRatio).div(-45).toInt().div(10f)
+            val calculatedRatio = calculateRatioFun(data?.currentRadius?:0.0)
+
             if (isViewVisible(positionData) && calculatedRatio > 0.0 && calculatedRatio < 2.0) {
-                addView(viewForPosition)
                 viewForPosition.scaleX = calculatedRatio
                 viewForPosition.scaleY = calculatedRatio
+                addView(viewForPosition)
                 viewsForDetaching.remove(viewForPosition)
                 measureChildWithMargins(viewForPosition, itemWidth, itemWidth)
                 layoutDecoratedWithMargins(viewForPosition, positionData)
@@ -175,14 +182,14 @@ class CircularRecyclerLayoutManager(
                 val data = viewCalculation[childPosition]
 
                 val positionData = calculatePosition(data.currentRadius ?: 0.0, data.angle ?: 0.0)
-                val calculatedRatio =
-                    (data.currentRadius ?: 0.0).div(spiralRatio).div(-45).toInt().div(10f)
-                childAt.scaleX = calculatedRatio
-                childAt.scaleY = calculatedRatio
+                val calculatedRatio = calculateRatioFun(data?.currentRadius?:0.0)
+
                 if (isViewVisible(positionData).not() || data.currentRadius == 0.0 || calculatedRatio > 2.0) {
                     viewsForDetaching.add(childAt)
                 } else {
-                    childAt.updatePosition(positionData)
+                    Log.e("updatePosition", "calculatedRatio: $calculatedRatio position $position")
+
+                    childAt.updatePosition(positionData, calculatedRatio)
                 }
                 updatedPositions.add(childPosition)
 
@@ -211,6 +218,7 @@ class CircularRecyclerLayoutManager(
     ): Int {
         var travel = dx
         isScrollBackward = dx >= 0
+/*
         travel = if (isScrollBackward) {
             if (dx >= 500)
                 500
@@ -222,10 +230,10 @@ class CircularRecyclerLayoutManager(
             else
                 dx
         }
+*/
         if (itemCount == 1)
             travel = 0
         val lastAngle = -45.0 * secondLastVisiblePos + 1
-        val lastRadius = spiralRatio.times(lastAngle)
         when {
             stopForwardScroll.not() && isScrollBackward.not() -> {
                 horizontalScrollOffset += travel
@@ -234,22 +242,37 @@ class CircularRecyclerLayoutManager(
                     var angle = -45.0 * pos + horizontalScrollOffset * 0.1
                     angle = if (angle < 0) angle else 0.0
                     val radius: Double = spiralRatio.times(angle)
-                    if (position == viewCalculation.size() - 1 && childCount in 2..4)
+                    if (position == viewCalculation.size() - 1 && childCount in 2..4) {
                         stopForwardScroll =
-                            (radius <= lastRadius + 5 && radius >= lastRadius - 5) || radius <= lastRadius
+                            (angle <= lastAngle + 25 && angle >= lastAngle - 15) || angle == lastAngle
+                    }
                     if (position == 0)
                         stopBackScroll =
-                            (radius <= lastRadius + 5 && radius >= lastRadius - 5) || radius > lastRadius + 5
+                            (angle <= lastAngle + 25 && angle >= lastAngle - 25) || angle > lastAngle + 25
                     if (lastAngle >= angle - 25 && lastAngle <= angle + 25) {
                         val positionData = calculatePosition(radius, angle)
-                        onLayoutDrawn.invoke(centerPoint, secondLastPositionData, position,positionData)
+                        onLayoutDrawn.invoke(
+                            centerPoint,
+                            secondLastPositionData,
+                            position,
+                            positionData
+                        )
                     }
                     if (stopForwardScroll.not()) {
                         viewCalculation[position].angle = angle
                         viewCalculation.get(position).currentRadius = radius
                     } else {
-                        viewCalculation[position].angle = angle
-                        viewCalculation.get(position).currentRadius = radius
+                        if (stopForwardScroll) {
+                            val positionData = calculatePosition(radius, angle)
+                            val snapX = positionData.left - secondLastPositionData?.left!!
+//                            horizontalScrollOffset += snapX
+                            stopForwardScroll = false
+                            scrollHorizontallyBy(snapX, recycler, state)
+                            stopForwardScroll = true
+                        } else {
+                            viewCalculation[position].angle = angle
+                            viewCalculation.get(position).currentRadius = radius
+                        }
                     }
                 }
                 updateViews(recycler)
@@ -258,19 +281,27 @@ class CircularRecyclerLayoutManager(
                 horizontalScrollOffset += travel
                 for (position in 0 until viewCalculation.size()) {
                     val pos = secondLastVisiblePos - position
-                    val lastAngle1 = -45.0 * secondLastVisiblePos
                     var angle = -45.0 * pos + horizontalScrollOffset * 0.1
                     angle = if (angle < 0) angle else 0.0
                     val radius: Double = spiralRatio.times(angle)
                     if (position == 0)
                         stopBackScroll =
-                            (radius <= lastRadius + 5 && radius >= lastRadius - 5) || radius > lastRadius + 5
-                    if (position == viewCalculation.size() - 1)
+                            (angle <= lastAngle + 25 && angle >= lastAngle - 25) || angle > lastAngle + 25
+                    if (position == viewCalculation.size() - 1 && childCount in 2..4)
                         stopForwardScroll =
-                            (radius <= lastRadius + 5 && radius >= lastRadius - 5) || radius <= lastRadius
-                    if (lastAngle1 >= angle - 25 && lastAngle1 <= angle + 25) {
+                            (angle <= lastAngle + 25 && angle >= lastAngle - 15) || angle == lastAngle
+
+                    if (lastAngle >= angle - 25 && lastAngle <= angle + 25) {
                         val positionData = calculatePosition(radius, angle)
-                        onLayoutDrawn.invoke(centerPoint, secondLastPositionData, position,positionData)
+                        if (stopBackScroll.not() && stopForwardScroll) {
+                            stopForwardScroll = false
+                        }
+                        onLayoutDrawn.invoke(
+                            centerPoint,
+                            secondLastPositionData,
+                            position,
+                            positionData
+                        )
                     }
                     if (stopBackScroll.not()) {
                         viewCalculation[position].angle = angle
@@ -315,9 +346,17 @@ class CircularRecyclerLayoutManager(
             viewCalculation[position].angle = angle
             viewCalculation.get(position).currentRadius = radius
         }
-//        calculateScaleData()
         updateViews(recycler)
         return travel
+    }
+
+    fun scrollToBottomOnClick(position: Int): Int {
+        val pos = secondLastVisiblePos - position
+        var angle = -45.0 * pos
+        angle = if (angle < 0) angle else 0.0
+        val circleRadius =
+            spiralRatio.times(angle)
+        return horizontalScrollOffset
     }
 
     inner class ItemData(
@@ -326,7 +365,7 @@ class CircularRecyclerLayoutManager(
         var angle: Double? = 0.0
     )
 
-    inner class PositionData(val left: Int, val top: Int, val right: Int, val bottom: Int)
-
 
 }
+
+class PositionData(val left: Int, val top: Int, val right: Int, val bottom: Int)
