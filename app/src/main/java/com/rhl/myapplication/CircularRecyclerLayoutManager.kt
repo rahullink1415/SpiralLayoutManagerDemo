@@ -1,25 +1,30 @@
 package com.rhl.myapplication
 
+import android.content.Context
 import android.graphics.PointF
+import android.util.DisplayMetrics
 import android.util.Log
 import android.util.SparseArray
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 
+
 class CircularRecyclerLayoutManager(
+    val context: Context,
     private val canScrollHorizontally: Boolean = true,
     private val canScrollVertically: Boolean = false,
     val itemWidth: Int = 0,
     private val onLayoutDrawn: (center: PointF, secondLastPositionData: PositionData?, posLast: Int, snapPosData: PositionData?) -> Unit
 ) : RecyclerView.LayoutManager() {
-    var secondLastPositionData: PositionData? = null
+    private var secondLastPositionData: PositionData? = null
 
     private var secondLastVisiblePos: Int = 0
+    private var currentSecondLastVisiblePos: Int = 0
     private var isScrollBackward: Boolean = false
     private var stopBackScroll: Boolean = true
     private var stopForwardScroll: Boolean = false
 
-    private val spiralRatio: Double = 0.65
+    private var spiralRatio: Double = 0.35
     private var horizontalScrollOffset = 0
     private var verticalScrollOffset = 0
 
@@ -46,6 +51,28 @@ class CircularRecyclerLayoutManager(
     private val viewCalculation = SparseArray<ItemData>(itemCount)
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler?, state: RecyclerView.State?) {
+        val densityDpi = context.resources.displayMetrics.densityDpi
+        Log.e("TAG", "onLayoutChildren: densityDpi $densityDpi")
+      /*  when (densityDpi) {
+            DisplayMetrics.DENSITY_LOW -> {
+                spiralRatio = 0.35
+            }
+            DisplayMetrics.DENSITY_MEDIUM -> {
+                spiralRatio = 0.4
+            }
+            DisplayMetrics.DENSITY_HIGH -> {
+                spiralRatio = 0.45
+            }
+            DisplayMetrics.DENSITY_XHIGH -> {
+                spiralRatio = 0.5
+            }
+            DisplayMetrics.DENSITY_XXHIGH -> {
+                spiralRatio = 0.55
+            }
+            DisplayMetrics.DENSITY_XXXHIGH -> {
+                spiralRatio = 0.65
+            }
+        }*/
         if (recycler != null) {
             detachAndScrapAttachedViews(recycler)
         };
@@ -70,6 +97,7 @@ class CircularRecyclerLayoutManager(
             fillAndLayoutItem(position, recycler)
         }
         onLayoutDrawn.invoke(centerPoint, secondLastPositionData, 0, null)
+        currentSecondLastVisiblePos = secondLastVisiblePos
     }
 
     private fun fillAndLayoutItem(position: Int, recycler: RecyclerView.Recycler?) {
@@ -111,7 +139,14 @@ class CircularRecyclerLayoutManager(
         val left = xCoordinate - itemWidth.div(2)
         val right = left + itemWidth
         val bottom = top + itemWidth
-        return PositionData(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
+        return PositionData(
+            left.toInt(),
+            top.toInt(),
+            right.toInt(),
+            bottom.toInt(),
+            xCoordinate,
+            yCoordinate
+        )
     }
 
 
@@ -156,7 +191,7 @@ class CircularRecyclerLayoutManager(
     ) {
         recycler?.getViewForPosition(position)?.let { viewForPosition ->
 
-            val calculatedRatio = calculateRatioFun(data?.currentRadius?:0.0)
+            val calculatedRatio = calculateRatioFun(data?.currentRadius ?: 0.0)
 
             if (isViewVisible(positionData) && calculatedRatio > 0.0 && calculatedRatio < 2.0) {
                 viewForPosition.scaleX = calculatedRatio
@@ -182,7 +217,7 @@ class CircularRecyclerLayoutManager(
                 val data = viewCalculation[childPosition]
 
                 val positionData = calculatePosition(data.currentRadius ?: 0.0, data.angle ?: 0.0)
-                val calculatedRatio = calculateRatioFun(data?.currentRadius?:0.0)
+                val calculatedRatio = calculateRatioFun(data?.currentRadius ?: 0.0)
 
                 if (isViewVisible(positionData).not() || data.currentRadius == 0.0 || calculatedRatio > 2.0) {
                     viewsForDetaching.add(childAt)
@@ -257,6 +292,7 @@ class CircularRecyclerLayoutManager(
                             position,
                             positionData
                         )
+                        currentSecondLastVisiblePos = secondLastVisiblePos - position
                     }
                     if (stopForwardScroll.not()) {
                         viewCalculation[position].angle = angle
@@ -302,6 +338,7 @@ class CircularRecyclerLayoutManager(
                             position,
                             positionData
                         )
+                        currentSecondLastVisiblePos = secondLastVisiblePos - position
                     }
                     if (stopBackScroll.not()) {
                         viewCalculation[position].angle = angle
@@ -323,40 +360,21 @@ class CircularRecyclerLayoutManager(
                 travel = 0
             }
         }
+        Log.e("scrollToBottomOnClick", " horizontalScrollOffset $horizontalScrollOffset")
 
         return travel
     }
 
-    override fun scrollVerticallyBy(
-        dy: Int,
-        recycler: RecyclerView.Recycler?,
-        state: RecyclerView.State?
-    ): Int {
-        val travel = dy
 
-        verticalScrollOffset += travel
-
-        offsetChildrenVertical(-travel)
-        for (position in 0 until viewCalculation.size()) {
-            if (shouldItemMove(position).not()) {
-                continue
-            }
-            val angle = -45.0 * position + verticalScrollOffset * 0.1
-            val radius: Double = spiralRatio.times(angle)
-            viewCalculation[position].angle = angle
-            viewCalculation.get(position).currentRadius = radius
-        }
-        updateViews(recycler)
-        return travel
-    }
-
-    fun scrollToBottomOnClick(position: Int): Int {
+    fun scrollToBottomOnClick(position: Int, snapX: Int): Int {
         val pos = secondLastVisiblePos - position
-        var angle = -45.0 * pos
-        angle = if (angle < 0) angle else 0.0
-        val circleRadius =
-            spiralRatio.times(angle)
-        return horizontalScrollOffset
+        val count = currentSecondLastVisiblePos - pos
+        Log.e(
+            "scrollToBottomOnClick",
+            "position: $position pos $pos $secondLastVisiblePos currentSecondLastVisiblePos ${currentSecondLastVisiblePos}positionData.left " +
+                    " snapX $snapX horizontalScrollOffset $horizontalScrollOffset count $count"
+        )
+        return -count * 450//if (isScrollBackward) count * 450 else count* 450
     }
 
     inner class ItemData(
@@ -368,4 +386,11 @@ class CircularRecyclerLayoutManager(
 
 }
 
-class PositionData(val left: Int, val top: Int, val right: Int, val bottom: Int)
+class PositionData(
+    val left: Int,
+    val top: Int,
+    val right: Int,
+    val bottom: Int,
+    val x: Double,
+    val y: Double
+)

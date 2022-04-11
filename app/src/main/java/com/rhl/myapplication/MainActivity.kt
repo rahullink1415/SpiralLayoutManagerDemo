@@ -16,8 +16,8 @@ import com.rhl.myapplication.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
-    var mSecondLastPositionData: CircularRecyclerLayoutManager.PositionData? = null
-    var mSnapPositionData: CircularRecyclerLayoutManager.PositionData? = null
+    var mSecondLastPositionData: PositionData? = null
+    var mSnapPositionData: PositionData? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity() {
             "25",
             "26"
         )
+
         val itemWidth =
             (resources?.getDimension(R.dimen.item_width) ?: 200f).toInt()
 
@@ -61,11 +62,7 @@ class MainActivity : AppCompatActivity() {
         binding.recyclerview.layoutParams.height = screenHeight /// 2)//
         binding.recyclerview.layoutParams.width = screenWidth /// 2
 
-        //This is how you would usually set up a LinearLayoutManager
-//        recyclerview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        //This is using our CustomLayoutManager.
-        //Try changing between CustomLayoutManager1, CustomLayoutManager2 etc. to see the differences
-        binding.recyclerview.layoutManager = CircularRecyclerLayoutManager(
+        binding.recyclerview.layoutManager = CircularRecyclerLayoutManager(this,
             canScrollHorizontally = true,
             canScrollVertically = false,
             itemWidth = itemWidth
@@ -102,8 +99,6 @@ class MainActivity : AppCompatActivity() {
                             val snapX = snapData.left-lastPosData.left
                             val snapY = lastPosData.top-snapData.top
                             recyclerView.smoothScrollBy(snapX,snapY)
-//                            recyclerView.scrollBy(snapX,snapY)
-
                         }
                     }
             }
