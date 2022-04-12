@@ -51,20 +51,63 @@ class MainActivity : AppCompatActivity() {
             "26"
         )
 
-        val itemWidth =
-            (resources?.getDimension(R.dimen.item_width) ?: 200f).toInt()
+        var itemWidth =65
+            //(resources?.getDimension(R.dimen.item_width) ?: 200f).toInt()
 
         val size = Point()
         windowManager.defaultDisplay.getSize(size)
         val screenWidth = size.x
         val screenHeight = size.y
-
+        var spiralRatio = 0.65
         binding.recyclerview.layoutParams.height = screenHeight /// 2)//
         binding.recyclerview.layoutParams.width = screenWidth /// 2
+        val densityDpi = resources.displayMetrics.density
+        val scaledDensity = resources.displayMetrics.scaledDensity
+// return 0.75 if it's LDPI
+// return 1.0 if it's MDPI
+// return 1.5 if it's HDPI
+// return 2.0 if it's XHDPI
+// return 3.0 if it's XXHDPI
+// return 4.0 if it's XXXHDPI
+        when (densityDpi) {
+            in 0f..0.75f -> {//LDPI
+                spiralRatio = 0.18
+            }
+            in 0.75f..1f -> {//MDPI
+                spiralRatio = 0.26
+//                itemWidth = itemWidth.times(1.0).toInt()
+            }
+            in 1f..1.5f -> {//HDPI
+                spiralRatio = 0.32
+//                itemWidth = itemWidth.times(1.5).toInt()
+            }
+            in 1.5f..2f -> {//XHDPI
+                spiralRatio = 0.45
+//                itemWidth = itemWidth.times(2.0).toInt()
+            }
+            in 2f..3f -> {//XXHDPI
+                spiralRatio = 0.65
+//                itemWidth = itemWidth.times(3.5).toInt()
+            }
+            in 2f..3f -> {//XXHDPI
+                spiralRatio = 0.78
+//                itemWidth = itemWidth.times(3.5).toInt()
+            }
+            in 3f..4f -> {//XXHDPI
+                spiralRatio = 0.85
+//                itemWidth = itemWidth.times(3.5).toInt()
+            }
+            else -> {//XXXHDPI
+                spiralRatio = 0.99
+//                itemWidth = itemWidth.times(5.0).toInt()
+            }
+        }
+        itemWidth = itemWidth.times(scaledDensity).toInt()
 
-        binding.recyclerview.layoutManager = CircularRecyclerLayoutManager(this,
+        binding.recyclerview.layoutManager = CircularRecyclerLayoutManager(
             canScrollHorizontally = true,
             canScrollVertically = false,
+            spiralRatio =spiralRatio,
             itemWidth = itemWidth
         ) { _, secondLastPositionData,lastPos,snapPosData ->
             secondLastPositionData?.let {
